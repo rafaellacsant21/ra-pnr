@@ -31,7 +31,8 @@
   alt="Apartamento PNR em escala real"
   ar ar-modes="scene-viewer quick-look webxr" ar-scale="fixed" ar-placement="floor"
   camera-controls touch-action="pan-y"
-  camera-orbit="30deg 55deg auto" min-camera-orbit="auto auto 2m" max-camera-orbit="auto 85deg 30m"
+  camera-target="2.5m 0.9m -1.5m" camera-orbit="-35deg 82deg 5.3m" field-of-view="70deg"
+  min-camera-orbit="auto auto 0.5m" max-camera-orbit="auto 100deg 8m"
   environment-image="neutral" exposure="1.0" tone-mapping="neutral"
   shadow-intensity="0.9" shadow-softness="0.8">
   <div id="progresso" slot="progress-bar"></div>
@@ -41,7 +42,7 @@
 </model-viewer>
 <header>
   <h1>PNR · Realidade aumentada 1:1</h1>
-  <p>Escala real, sem laje, para caminhar por dentro</p>
+  <p>Escala real, com iluminação calculada, para caminhar por dentro</p>
 </header>
 <script>
   const mv = document.getElementById('mv');
