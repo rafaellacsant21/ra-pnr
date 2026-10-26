@@ -19,8 +19,12 @@
   header p { margin: 2px 0 0; color: var(--sutil); font-size: .9rem; }
   #botao-ra { position: absolute; left: 50%; bottom: max(24px, env(safe-area-inset-bottom)); transform: translateX(-50%);
     border: 0; border-radius: 999px; padding: 14px 26px; font: 600 1rem system-ui, sans-serif;
-    background: var(--acento); color: var(--acento-texto); box-shadow: 0 6px 20px rgba(0,0,0,.25); }
-  #sem-ra { position: absolute; left: 16px; right: 16px; bottom: 24px; text-align: center; color: var(--sutil); font-size: .9rem; display: none; }
+    background: var(--acento); color: var(--acento-texto); box-shadow: 0 6px 20px rgba(0,0,0,.25); white-space: nowrap; }
+  #aviso { position: absolute; left: 16px; right: 16px; bottom: max(20px, env(safe-area-inset-bottom)); text-align: center; font-size: .92rem;
+    background: var(--fundo); border-radius: 14px; padding: 12px 14px; box-shadow: 0 4px 16px rgba(0,0,0,.18); display: none; }
+  #aviso a { display: inline-block; margin-top: 10px; border-radius: 999px; padding: 10px 20px; font-weight: 600;
+    background: var(--acento); color: var(--acento-texto); text-decoration: none; }
+  #diag { position: fixed; right: 8px; bottom: 2px; font-size: .68rem; color: var(--sutil); opacity: .7; }
   #progresso { position: absolute; left: 0; top: 0; height: 3px; background: var(--acento); width: 0; transition: width .2s; }
   #dicas { position: absolute; left: 16px; right: 16px; bottom: 96px; text-align: center; color: var(--sutil); font-size: .85rem; }
 </style>
@@ -29,7 +33,7 @@
 <model-viewer id="mv"
   src="pnr.glb" ios-src="pnr.usdz"
   alt="Apartamento PNR em escala real"
-  ar ar-modes="scene-viewer quick-look webxr" ar-scale="fixed" ar-placement="floor"
+  ar ar-modes="webxr scene-viewer quick-look" ar-scale="fixed" ar-placement="floor"
   camera-controls touch-action="pan-y"
   camera-target="2.5m 0.9m -1.5m" camera-orbit="-35deg 82deg 5.3m" field-of-view="70deg"
   min-camera-orbit="auto auto 0.5m" max-camera-orbit="auto 100deg 8m"
@@ -38,22 +42,59 @@
   <div id="progresso" slot="progress-bar"></div>
   <button id="botao-ra" slot="ar-button">Ver em tamanho real</button>
   <div id="dicas">Aponte para o chão, aguarde o plano aparecer e toque para posicionar.<br>A origem fica no centro da sala.</div>
-  <div id="sem-ra">Este aparelho não suporta RA. Abra o link num celular Android com ARCore ou num iPhone.</div>
+  <div id="aviso"></div>
 </model-viewer>
 <header>
   <h1>PNR · Realidade aumentada 1:1</h1>
   <p>Escala real, com iluminação calculada, para caminhar por dentro</p>
 </header>
+<div id="diag"></div>
 <script>
   const mv = document.getElementById('mv');
+  const aviso = document.getElementById('aviso');
+  const ua = navigator.userAgent;
+  const android = /Android/i.test(ua), ios = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  // leitores de QR, Instagram, Facebook etc. abrem o link num navegador embutido, que não abre a RA
+  const embutido = /; wv\)|Instagram|FBAN|FBAV|FBIOS|Line\/|GSA\/|Snapchat|MicroMessenger/i.test(ua);
+  const voltouSemRA = location.hash.includes('no-ar-fallback');
+  const url = location.href.split('#')[0];
+  const glb = new URL('pnr.glb', url).href;
+
+  function mostra(html) {
+    aviso.innerHTML = html; aviso.style.display = 'block';
+    document.getElementById('botao-ra').style.display = 'none';
+    document.getElementById('dicas').style.display = 'none';
+  }
+  function semRA() {
+    if (embutido && android) {
+      mostra('Este link abriu dentro do leitor de QR, que não mostra a RA.<br>' +
+        '<a href="intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end">Abrir no Chrome</a>');
+    } else if (embutido && ios) {
+      mostra('Este link abriu dentro de outro aplicativo, que não mostra a RA.<br>Toque em <b>⋯</b> ou <b>Compartilhar</b> e escolha <b>Abrir no Safari</b>.');
+    } else if (android) {
+      mostra((voltouSemRA ? 'O visualizador de RA do Google não abriu o modelo.' : 'O Chrome não liberou a RA neste aparelho.') +
+        '<br>Confira se o app <b>Google Play Services para RA</b> está instalado e atualizado.<br>' +
+        '<a href="intent://arvr.google.com/scene-viewer/1.2?file=' + encodeURIComponent(glb) +
+        '&mode=ar_only&resizable=false&title=PNR#Intent;scheme=https;package=com.google.ar.core;action=android.intent.action.VIEW;' +
+        'S.browser_fallback_url=' + encodeURIComponent('https://play.google.com/store/apps/details?id=com.google.ar.core') + ';end">Tentar o visualizador de RA</a>');
+    } else if (ios) {
+      mostra('O Safari não liberou a RA. Confira se o iPhone tem iOS 12 ou mais recente e abra o link pelo Safari.');
+    } else {
+      mostra('A RA funciona no celular. Leia o QR com um Android ou iPhone.');
+    }
+  }
+
   mv.addEventListener('progress', e => {
     document.getElementById('progresso').style.width = (e.detail.totalProgress * 100) + '%';
   });
   mv.addEventListener('load', () => {
-    if (!mv.canActivateAR) {
-      document.getElementById('sem-ra').style.display = 'block';
-      document.getElementById('dicas').style.display = 'none';
-    }
+    document.getElementById('diag').textContent =
+      (android ? 'Android' : ios ? 'iOS' : 'computador') + (embutido ? ' · navegador embutido' : '') +
+      ' · RA ' + (mv.canActivateAR ? 'disponível' : 'indisponível') + (voltouSemRA ? ' · retorno sem RA' : '');
+    if (!mv.canActivateAR || embutido) semRA();
+  });
+  mv.addEventListener('ar-status', e => {
+    if (e.detail.status === 'failed') semRA();
   });
 </script>
 </body>
