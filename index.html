@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PNR em RA</title>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
+<style>
+  :root { --fundo: #f4f2ee; --texto: #1d1d1b; --sutil: #6b6862; --acento: #1f5f4a; --acento-texto: #fff; }
+  @media (prefers-color-scheme: dark) {
+    :root { --fundo: #161615; --texto: #f1efe9; --sutil: #a8a49b; --acento: #5fb894; --acento-texto: #0e1a15; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--fundo); color: var(--texto);
+    font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  model-viewer { width: 100%; height: 100%; --poster-color: transparent; background: var(--fundo); }
+  header { position: fixed; top: 0; left: 0; right: 0; padding: max(16px, env(safe-area-inset-top)) 16px 0; pointer-events: none; }
+  header h1 { margin: 0; font-size: 1.15rem; font-weight: 650; }
+  header p { margin: 2px 0 0; color: var(--sutil); font-size: .9rem; }
+  #botao-ra { position: absolute; left: 50%; bottom: max(24px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+    border: 0; border-radius: 999px; padding: 14px 26px; font: 600 1rem system-ui, sans-serif;
+    background: var(--acento); color: var(--acento-texto); box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+  #sem-ra { position: absolute; left: 16px; right: 16px; bottom: 24px; text-align: center; color: var(--sutil); font-size: .9rem; display: none; }
+  #progresso { position: absolute; left: 0; top: 0; height: 3px; background: var(--acento); width: 0; transition: width .2s; }
+  #dicas { position: absolute; left: 16px; right: 16px; bottom: 96px; text-align: center; color: var(--sutil); font-size: .85rem; }
+</style>
+</head>
+<body>
+<model-viewer id="mv"
+  src="pnr.glb" ios-src="pnr.usdz"
+  alt="Apartamento PNR em escala real"
+  ar ar-modes="scene-viewer quick-look webxr" ar-scale="fixed" ar-placement="floor"
+  camera-controls touch-action="pan-y"
+  camera-orbit="30deg 55deg auto" min-camera-orbit="auto auto 2m" max-camera-orbit="auto 85deg 30m"
+  environment-image="neutral" exposure="1.0" tone-mapping="neutral"
+  shadow-intensity="0.9" shadow-softness="0.8">
+  <div id="progresso" slot="progress-bar"></div>
+  <button id="botao-ra" slot="ar-button">Ver em tamanho real</button>
+  <div id="dicas">Aponte para o chão, aguarde o plano aparecer e toque para posicionar.<br>A origem fica no centro da sala.</div>
+  <div id="sem-ra">Este aparelho não suporta RA. Abra o link num celular Android com ARCore ou num iPhone.</div>
+</model-viewer>
+<header>
+  <h1>PNR · Realidade aumentada 1:1</h1>
+  <p>Escala real, sem laje, para caminhar por dentro</p>
+</header>
+<script>
+  const mv = document.getElementById('mv');
+  mv.addEventListener('progress', e => {
+    document.getElementById('progresso').style.width = (e.detail.totalProgress * 100) + '%';
+  });
+  mv.addEventListener('load', () => {
+    if (!mv.canActivateAR) {
+      document.getElementById('sem-ra').style.display = 'block';
+      document.getElementById('dicas').style.display = 'none';
+    }
+  });
+</script>
+</body>
+</html>
